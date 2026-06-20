@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitrina Automatizada de Panadería</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-6">
+    <div class="max-w-5xl mx-auto">
+        
+        <header class="mb-8 border-b border-slate-800 pb-4">
+            <h1 class="text-4xl font-extrabold text-amber-400 tracking-tight">Sistema Vitrina Pamia</h1>
+            <p class="text-slate-400 mt-1">Automatización Industrial.</p>
+        </header>
+
+        <div id="alertas-contenedor" class="hidden mb-6 p-4 bg-red-950/80 border-l-4 border-red-500 rounded text-red-200 backdrop-blur-sm">
+            <h3 class="font-bold text-xl mb-2 text-red-400">RETIRAR DE VITRINA (Menos de 24 horas para expirar):</h3>
+            <ul id="lista-alertas" class="list-disc pl-5 space-y-1 text-sm"></ul>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="space-y-6 lg:col-span-1">
+                
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                    <h2 class="text-lg font-bold text-amber-400 mb-3">Escáner de Código de Barras</h2>
+                    <p class="text-xs text-slate-400 mb-3">Prueba con: <code class="bg-slate-900 px-1 text-amber-300">78011111</code> (Pie) o <code class="bg-slate-900 px-1 text-amber-300">78044444</code> (Croissant)</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="barcode-input" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-center text-xl font-mono text-amber-400 tracking-widest focus:outline-none focus:border-amber-400" placeholder="00000000">
+                        <button onclick="escanearCodigo()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 rounded transition-all">🔍</button>
+                    </div>
+                    <span id="scan-error" class="text-xs text-red-400 mt-1 block hidden">Código no registrado</span>
+                </div>
+
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                    <h2 class="text-lg font-bold text-slate-200 mb-4">Registro en Vitrina</h2>
+                    <form id="form-lote" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre del Producto:</label>
+                            <input type="text" id="prod-nombre" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Escanee o escriba aquí">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Color de Etiqueta Asignado:</label>
+                            <input type="text" id="prod-color" readonly class="w-full bg-slate-900 border border-slate-800 p-2.5 rounded text-amber-300 font-bold cursor-not-allowed" placeholder="Se asigna solo al escanear">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Horas de Duración:</label>
+                            <input type="number" id="prod-horas" value="23" class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Modifica a menos de 24 para ver la alerta">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg font-bold transition-all shadow-md">Ingresar a Vitrina</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
+                <h2 class="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
+                    Monitor de Vitrina Activa
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="p-3">Producto</th>
+                                <th class="p-3">Etiqueta Física</th>
+                                <th class="p-3">Fecha Vencimiento</th>
+                                <th class="p-3">Estado</th>
+                                <th class="p-3 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo" class="divide-y divide-slate-700/50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api/lotes";
+
+        async function escanearCodigo() {
+            const barcode = document.getElementById("barcode-input").value;
+            const errorSpan = document.getElementById("scan-error");
+            
+            if(!barcode) return;
+
+            try {
+                const res = await fetch(`http://localhost:5000/api/producto/${barcode}`);
+                if (!res.ok) throw new Error();
+                
+                const data = await res.json();
+                errorSpan.classList.add("hidden");
+                
+                document.getElementById("prod-nombre").value = data.nombre;
+                document.getElementById("prod-color").value = data.color_asignado;
+                document.getElementById("prod-horas").value = 23; 
+
+            } catch (err) {
+                errorSpan.classList.remove("hidden");
+            }
+        }
+
+        document.getElementById("barcode-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") escanearCodigo();
+        });
+
+        async function cargarLotes() {
+            const res = await fetch(API_URL);
+            const lotes = await res.json();
+            
+            const tabla = document.getElementById("tabla-cuerpo");
+            const contenedorAlertas = document.getElementById("alertas-contenedor");
+            const listaAlertas = document.getElementById("lista-alertas");
+            
+            tabla.innerHTML = "";
+            listaAlertas.innerHTML = "";
+            let tieneAlertas = false;
+
+            lotes.forEach(lote => {
+                const fila = document.createElement("tr");
+                if (lote.alerta) {
+                    fila.className = "bg-red-500/10 text-red-300 font-semibold";
+                }
+                
+                fila.innerHTML = `
+                    <td class="p-3 text-sm">${lote.producto}</td>
+                    <td class="p-3 text-sm">
+                        <span class="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300">
+                            ${lote.color}
+                        </span>
+                    </td>
+                    <td class="p-3 text-sm font-mono text-slate-400">${lote.fecha_vencimiento}</td>
+                    <td class="p-3 text-sm">
+                        ${lote.alerta ? '<span class="text-red-400 animate-pulse">⚠️ ALERTA: RETIRAR</span>' : '<span class="text-emerald-400">✓ Óptimo</span>'}
+                    </td>
+                    <td class="p-3 text-sm text-center">
+                        <button onclick="eliminarLote(${lote.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-bold transition-all shadow shadow-red-900/50">
+                            🗑️ Eliminar
+                        </button>
+                    </td>
+                `;
+                tabla.appendChild(fila);
+
+                if (lote.alerta) {
+                    tieneAlertas = true;
+                    const item = document.createElement("li");
+                    item.innerHTML = `El producto <strong>${lote.producto}</strong> con etiqueta <strong>[${lote.color}]</strong> esta pronto a su vencimiento.`;
+                    listaAlertas.appendChild(item);
+                }
+            });
+
+            if (tieneAlertas) contenedorAlertas.classList.remove("hidden");
+            else contenedorAlertas.classList.add("hidden");
+        }
+
+        // --- NUEVA FUNCIÓN JAVASCRIPT PARA ELIMINAR ---
+        async function eliminarLote(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este producto de la vitrina?")) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "DELETE"
+                });
+                cargarLotes(); // Recarga la tabla de inmediato
+            }
+        }
+
+        document.getElementById("form-lote").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const producto = document.getElementById("prod-nombre").value;
+            const color = document.getElementById("prod-color").value || "Manual - Sin Color ⚪";
+            const horas_duracion = document.getElementById("prod-horas").value;
+
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ producto, color, horas_duracion })
+            });
+
+            document.getElementById("prod-nombre").value = "";
+            document.getElementById("prod-color").value = "";
+            document.getElementById("barcode-input").value = "";
+            cargarLotes();
+        });
+
+        cargarLotes();
+    </script>
+</body>
+</html>
