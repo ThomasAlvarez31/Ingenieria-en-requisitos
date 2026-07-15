@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería - Sistema de Gestión</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+<div id="login-screen" class="flex items-center justify-center min-h-screen">
+    <div class="bg-slate-800 p-8 rounded-xl border border-slate-700 shadow-2xl w-full max-w-sm">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-amber-400">Panadería</h1>
+            <p class="text-slate-400 text-sm mt-1">Sistema de Gestión de Vitrina</p>
+        </div>
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+                <input type="text" id="login-user" required class="w-full bg-slate-900 border border-slate-600 p-2.5 rounded text-white focus:outline-none focus:border-amber-400" placeholder="admin o panadero1">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+                <input type="password" id="login-pass" required class="w-full bg-slate-900 border border-slate-600 p-2.5 rounded text-white focus:outline-none focus:border-amber-400" placeholder="••••••">
+            </div>
+            <span id="login-error" class="text-red-400 text-sm hidden block"></span>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold p-2.5 rounded-lg transition-all">Ingresar</button>
+        </form>
+        <div class="relative my-5">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-slate-800 px-3 text-slate-500 uppercase">o</span></div>
+        </div>
+        <button id="huella-login-btn" onclick="loginConHuella()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-2.5 rounded-lg transition-all flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+            Ingresar con Huella
+        </button>
+        <span id="huella-login-error" class="text-red-400 text-sm hidden block mt-2 text-center"></span>
+        <span id="huella-login-exito" class="text-emerald-400 text-sm hidden block mt-2 text-center"></span>
+    </div>
+</div>
+
+<div id="app-screen" class="hidden">
+    <nav class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-bold text-amber-400">Panadería</h1>
+            <div id="nav-tabs" class="flex gap-1 ml-4"></div>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <span id="user-info" class="text-slate-400"></span>
+            <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-all">Salir</button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+
+        <!-- === VITRINA VIEW === -->
+        <div id="view-vitrina" class="view hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="space-y-6 lg:col-span-1">
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                        <h2 class="text-lg font-bold text-amber-400 mb-3">Escáner de Código de Barras</h2>
+                        <p class="text-xs text-slate-400 mb-3">Prueba con: <code class="bg-slate-900 px-1 text-amber-300">78011111</code> u otros registrados</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="barcode-input" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-center text-xl font-mono text-amber-400 tracking-widest focus:outline-none focus:border-amber-400" placeholder="00000000">
+                            <button onclick="escanearCodigo()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 rounded transition-all">🔍</button>
+                        </div>
+                        <span id="scan-error" class="text-xs text-red-400 mt-1 block hidden">Código no registrado</span>
+                    </div>
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                        <h2 class="text-lg font-bold text-slate-200 mb-4">Registro en Vitrina</h2>
+                        <form id="form-lote" class="space-y-4">
+                            <input type="hidden" id="prod-codigo-bar">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre del Producto:</label>
+                                <input type="text" id="prod-nombre" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Escanee o escriba aquí">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Color de Etiqueta:</label>
+                                <input type="text" id="prod-color" readonly class="w-full bg-slate-900 border border-slate-800 p-2.5 rounded text-amber-300 font-bold cursor-not-allowed" placeholder="Se asigna al escanear">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Horas de Duración:</label>
+                                <input type="number" id="prod-horas" value="23" class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg font-bold transition-all shadow-md">Ingresar a Vitrina</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
+                    <h2 class="text-xl font-bold text-slate-200 mb-4">Monitor de Vitrina Activa</h2>
+                    <div id="alertas-contenedor" class="hidden mb-4 p-4 bg-red-950/80 border-l-4 border-red-500 rounded text-red-200 backdrop-blur-sm">
+                        <h3 class="font-bold text-lg mb-2 text-red-400">RETIRAR DE VITRINA (próximos a vencer):</h3>
+                        <ul id="lista-alertas" class="list-disc pl-5 space-y-1 text-sm"></ul>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider">
+                                    <th class="p-3">Producto</th>
+                                    <th class="p-3">Etiqueta Física</th>
+                                    <th class="p-3">Fecha Vencimiento</th>
+                                    <th class="p-3">Estado</th>
+                                    <th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-cuerpo" class="divide-y divide-slate-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === PRODUCTOS VIEW (Admin) === -->
+        <div id="view-productos" class="view hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-slate-200">Catálogo de Productos</h2>
+                <button onclick="mostrarFormProducto()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition-all">+ Nuevo Producto</button>
+            </div>
+            <div id="producto-form-container" class="hidden mb-6">
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl max-w-lg">
+                    <h3 id="producto-form-title" class="text-lg font-bold text-slate-200 mb-4">Nuevo Producto</h3>
+                    <form id="form-producto" class="space-y-4">
+                        <input type="hidden" id="prod-edit-id">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Código Único</label>
+                            <input type="text" id="prod-codigo" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none focus:border-amber-400 font-mono" placeholder="Ej: 78066666">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre del Producto</label>
+                            <input type="text" id="prod-nombre-p" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Ej: Pan de Molde">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Horas de Duración</label>
+                            <input type="number" id="prod-horas-p" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Ej: 72">
+                        </div>
+                        <span id="producto-error" class="text-red-400 text-sm hidden block"></span>
+                        <div class="flex gap-2">
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all">Guardar</button>
+                            <button type="button" onclick="cancelarFormProducto()" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-sm transition-all">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider bg-slate-900/50">
+                            <th class="p-3">Código</th>
+                            <th class="p-3">Nombre</th>
+                            <th class="p-3">Horas</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-productos" class="divide-y divide-slate-700/50"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- === EMPLEADOS VIEW (Admin) === -->
+        <div id="view-empleados" class="view hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-slate-200">Empleados</h2>
+                <button onclick="mostrarFormEmpleado()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition-all">+ Nuevo Empleado</button>
+            </div>
+            <div id="empleado-form-container" class="hidden mb-6">
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl max-w-lg">
+                    <h3 id="empleado-form-title" class="text-lg font-bold text-slate-200 mb-4">Nuevo Empleado</h3>
+                    <form id="form-empleado" class="space-y-4">
+                        <input type="hidden" id="emp-edit-id">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre Completo</label>
+                            <input type="text" id="emp-nombre" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Nombre del empleado">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+                            <input type="text" id="emp-username" required class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="username">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+                            <input type="password" id="emp-password" class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none" placeholder="Dejar vacío para mantener">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Rol</label>
+                            <select id="emp-rol" class="w-full bg-slate-700 border border-slate-600 p-2.5 rounded text-white focus:outline-none">
+                                <option value="panadero">Panadero</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        <span id="empleado-error" class="text-red-400 text-sm hidden block"></span>
+                        <div class="flex gap-2">
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all">Guardar</button>
+                            <button type="button" onclick="cancelarFormEmpleado()" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-sm transition-all">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider bg-slate-900/50">
+                            <th class="p-3">Nombre</th>
+                            <th class="p-3">Usuario</th>
+                            <th class="p-3">Rol</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3">Huella</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-empleados" class="divide-y divide-slate-700/50"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- === REPORTES VIEW (Admin) === -->
+        <div id="view-reportes" class="view hidden">
+            <h2 class="text-2xl font-bold text-slate-200 mb-6">Reportes</h2>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl mb-6">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Período</label>
+                        <select id="reporte-periodo" onchange="toggleFechasReporte()" class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:outline-none">
+                            <option value="todo">Todo</option>
+                            <option value="hoy">Hoy</option>
+                            <option value="semana">Esta Semana</option>
+                            <option value="mes">Este Mes</option>
+                            <option value="personalizado">Personalizado</option>
+                        </select>
+                    </div>
+                    <div id="fecha-desde-container" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Desde</label>
+                        <input type="date" id="reporte-desde" class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:outline-none">
+                    </div>
+                    <div id="fecha-hasta-container" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Hasta</label>
+                        <input type="date" id="reporte-hasta" class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:outline-none">
+                    </div>
+                    <button onclick="cargarReportes()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition-all">Actualizar</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-emerald-900/40 border border-emerald-700/50 rounded-xl p-5 text-center">
+                    <p class="text-emerald-300 text-xs uppercase font-semibold tracking-wider">Recibidos</p>
+                    <p id="reporte-recibidos" class="text-4xl font-bold text-emerald-400 mt-2">0</p>
+                </div>
+                <div class="bg-blue-900/40 border border-blue-700/50 rounded-xl p-5 text-center">
+                    <p class="text-blue-300 text-xs uppercase font-semibold tracking-wider">Vendidos</p>
+                    <p id="reporte-vendidos" class="text-4xl font-bold text-blue-400 mt-2">0</p>
+                </div>
+                <div class="bg-red-900/40 border border-red-700/50 rounded-xl p-5 text-center">
+                    <p class="text-red-300 text-xs uppercase font-semibold tracking-wider">Vencidos</p>
+                    <p id="reporte-vencidos" class="text-4xl font-bold text-red-400 mt-2">0</p>
+                </div>
+                <div class="bg-amber-900/40 border border-amber-700/50 rounded-xl p-5 text-center">
+                    <p class="text-amber-300 text-xs uppercase font-semibold tracking-wider">En Stock</p>
+                    <p id="reporte-stock" class="text-4xl font-bold text-amber-400 mt-2">0</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                    <h3 class="text-lg font-bold text-slate-200 mb-4">Top Productos Recibidos</h3>
+                    <div id="top-recibidos" class="space-y-2"></div>
+                </div>
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+                    <h3 class="text-lg font-bold text-slate-200 mb-4">Top Productos Vendidos</h3>
+                    <div id="top-vendidos" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+function getConfig() {
+    return { credentials: 'include' };
+}
+
+function bufferToBase64url(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64urlToBuffer(base64url) {
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    const padLen = (4 - base64.length % 4) % 4;
+    const padded = base64 + '='.repeat(padLen);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+let currentUser = null;
+
+// --- Login ---
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-user').value;
+    const password = document.getElementById('login-pass').value;
+    const errSpan = document.getElementById('login-error');
+
+    try {
+        const res = await fetch(`${API}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            errSpan.textContent = data.error;
+            errSpan.classList.remove('hidden');
+            return;
+        }
+        errSpan.classList.add('hidden');
+        currentUser = data;
+        mostrarApp();
+    } catch (err) {
+        errSpan.textContent = 'Error de conexión';
+        errSpan.classList.remove('hidden');
+    }
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    currentUser = null;
+    document.getElementById('app-screen').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+});
+
+async function verificarSesion() {
+    try {
+        const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+        if (res.ok) {
+            currentUser = await res.json();
+            mostrarApp();
+        }
+    } catch (_) {}
+}
+
+function mostrarApp() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    document.getElementById('user-info').textContent = `${currentUser.nombre_completo} (${currentUser.rol === 'admin' ? 'Admin' : 'Panadero'})`;
+
+    const tabs = document.getElementById('nav-tabs');
+    tabs.innerHTML = '';
+    const views = [{ id: 'vitrina', label: 'Vitrina' }];
+    if (currentUser.rol === 'admin') {
+        views.push({ id: 'productos', label: 'Productos' });
+        views.push({ id: 'empleados', label: 'Empleados' });
+        views.push({ id: 'reportes', label: 'Reportes' });
+    }
+    views.forEach(v => {
+        const btn = document.createElement('button');
+        btn.textContent = v.label;
+        btn.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all';
+        btn.dataset.view = v.id;
+        btn.onclick = () => cambiarVista(v.id);
+        tabs.appendChild(btn);
+    });
+    cambiarVista('vitrina');
+}
+
+function cambiarVista(vista) {
+    document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+    document.getElementById(`view-${vista}`).classList.remove('hidden');
+    document.querySelectorAll('#nav-tabs button').forEach(btn => {
+        btn.className = btn.dataset.view === vista
+            ? 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-amber-500 text-slate-900'
+            : 'px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700';
+    });
+    if (vista === 'vitrina') cargarLotes();
+    if (vista === 'productos') cargarProductos();
+    if (vista === 'empleados') cargarEmpleados();
+    if (vista === 'reportes') cargarReportes();
+}
+
+// === WEBAUTHN (Huella Dactilar) ===
+
+async function loginConHuella() {
+    const errSpan = document.getElementById('huella-login-error');
+    const exitoSpan = document.getElementById('huella-login-exito');
+    errSpan.classList.add('hidden');
+    exitoSpan.classList.add('hidden');
+
+    if (!window.PublicKeyCredential) {
+        errSpan.textContent = 'Su navegador no soporta autenticación biométrica';
+        errSpan.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/auth/huella/auth-options`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            const data = await res.json();
+            errSpan.textContent = data.error || 'No hay huellas registradas';
+            errSpan.classList.remove('hidden');
+            return;
+        }
+
+        const { options, challenge_id } = await res.json();
+
+        const credentialRequestOptions = {
+            publicKey: {
+                challenge: base64urlToBuffer(options.challenge),
+                timeout: options.timeout,
+                rpId: options.rpId,
+                allowCredentials: options.allowCredentials.map(cred => ({
+                    type: cred.type,
+                    id: base64urlToBuffer(cred.id),
+                    transports: ['internal']
+                })),
+                userVerification: options.userVerification
+            }
+        };
+
+        exitoSpan.textContent = 'Coloque su dedo en el lector...';
+        exitoSpan.classList.remove('hidden');
+
+        const assertion = await navigator.credentials.get(credentialRequestOptions);
+
+        const authResponse = await fetch(`${API}/api/auth/huella/authenticate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                id: assertion.id,
+                authenticatorData: bufferToBase64url(assertion.response.authenticatorData),
+                clientDataJSON: bufferToBase64url(assertion.response.clientDataJSON),
+                signature: bufferToBase64url(assertion.response.signature),
+                challenge_id: challenge_id
+            })
+        });
+
+        const authData = await authResponse.json();
+
+        if (!authResponse.ok) {
+            errSpan.textContent = authData.error || 'Autenticación fallida';
+            errSpan.classList.remove('hidden');
+            exitoSpan.classList.add('hidden');
+            return;
+        }
+
+        errSpan.classList.add('hidden');
+        exitoSpan.classList.add('hidden');
+        currentUser = authData;
+        mostrarApp();
+
+    } catch (err) {
+        if (err.name === 'NotAllowedError') {
+            errSpan.textContent = 'Operación cancelada o huella no reconocida';
+        } else if (err.name === 'SecurityError') {
+            errSpan.textContent = 'Error de seguridad. Verifique que está en HTTPS o localhost.';
+        } else {
+            errSpan.textContent = 'Error: ' + (err.message || 'Desconocido');
+        }
+        errSpan.classList.remove('hidden');
+        exitoSpan.classList.add('hidden');
+    }
+}
+
+async function registrarHuella(usuarioId) {
+    if (!window.PublicKeyCredential) {
+        alert('Su navegador no soporta autenticación biométrica');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/auth/huella/register-options`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ user_id: usuarioId })
+        });
+
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.error || 'Error al obtener opciones de registro');
+            return;
+        }
+
+        const options = await res.json();
+
+        const createOptions = {
+            publicKey: {
+                challenge: base64urlToBuffer(options.challenge),
+                rp: {
+                    id: options.rp.id,
+                    name: options.rp.name
+                },
+                user: {
+                    id: base64urlToBuffer(options.user.id),
+                    name: options.user.name,
+                    displayName: options.user.displayName
+                },
+                pubKeyCredParams: options.pubKeyCredParams,
+                timeout: options.timeout,
+                attestation: options.attestation,
+                excludeCredentials: options.excludeCredentials.map(cred => ({
+                    type: cred.type,
+                    id: base64urlToBuffer(cred.id)
+                })),
+                authenticatorSelection: options.authenticatorSelection
+            }
+        };
+
+        const credential = await navigator.credentials.create(createOptions);
+
+        const regResponse = await fetch(`${API}/api/auth/huella/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                user_id: usuarioId,
+                id: credential.id,
+                attestationObject: bufferToBase64url(credential.response.attestationObject),
+                clientDataJSON: bufferToBase64url(credential.response.clientDataJSON)
+            })
+        });
+
+        const regData = await regResponse.json();
+
+        if (!regResponse.ok) {
+            alert(regData.error || 'Error al registrar huella');
+            return;
+        }
+
+        alert('Huella registrada exitosamente');
+        cargarEmpleados();
+
+    } catch (err) {
+        if (err.name === 'NotAllowedError') {
+            alert('Operación cancelada por el usuario');
+        } else {
+            alert('Error al registrar huella: ' + (err.message || 'Desconocido'));
+        }
+    }
+}
+
+async function eliminarHuella(usuarioId, huellaId) {
+    if (!confirm('¿Eliminar esta huella registrada?')) return;
+    try {
+        await fetch(`${API}/api/usuarios/${usuarioId}/huellas/${huellaId}`, {
+            method: 'DELETE',
+            ...getConfig()
+        });
+        cargarEmpleados();
+    } catch (_) {}
+}
+
+async function verHuellas(usuarioId) {
+    try {
+        const res = await fetch(`${API}/api/usuarios/${usuarioId}/huellas`, getConfig());
+        const huellas = await res.json();
+        if (huellas.length === 0) {
+            alert('Este empleado no tiene huellas registradas');
+        } else {
+            const lista = huellas.map(h => `• ID: ${h.credential_id.substring(0, 20)}... (Registrada: ${h.created_at})`).join('\n');
+            alert(`Huellas registradas (${huellas.length}):\n\n${lista}`);
+        }
+    } catch (_) {
+        alert('Error al consultar huellas');
+    }
+}
+
+// === VITRINA ===
+
+async function escanearCodigo() {
+    const barcode = document.getElementById('barcode-input').value;
+    const errorSpan = document.getElementById('scan-error');
+    if (!barcode) return;
+    try {
+        const res = await fetch(`${API}/api/producto/${barcode}`, getConfig());
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        errorSpan.classList.add('hidden');
+        document.getElementById('prod-nombre').value = data.nombre;
+        document.getElementById('prod-color').value = data.color_asignado;
+        document.getElementById('prod-horas').value = 23;
+        document.getElementById('prod-codigo-bar').value = barcode;
+    } catch {
+        errorSpan.classList.remove('hidden');
+    }
+}
+
+document.getElementById('barcode-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') escanearCodigo();
+});
+
+async function cargarLotes() {
+    try {
+        const res = await fetch(`${API}/api/lotes`, getConfig());
+        if (!res.ok) return;
+        const lotes = await res.json();
+        const tabla = document.getElementById('tabla-cuerpo');
+        const contenedorAlertas = document.getElementById('alertas-contenedor');
+        const listaAlertas = document.getElementById('lista-alertas');
+        tabla.innerHTML = '';
+        listaAlertas.innerHTML = '';
+        let tieneAlertas = false;
+
+        lotes.forEach(lote => {
+            const fila = document.createElement('tr');
+            if (lote.alerta) fila.className = 'bg-red-500/10 text-red-300 font-semibold';
+            const acciones = `
+                <button onclick="marcarVencido(${lote.id})" class="bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded text-xs font-bold transition-all mr-1">⚠️ Vencido</button>
+                <button onclick="eliminarLote(${lote.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-bold transition-all">🗑️ Vender</button>
+            `;
+            fila.innerHTML = `
+                <td class="p-3 text-sm">${lote.producto}</td>
+                <td class="p-3 text-sm">
+                    <span class="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300">${lote.color}</span>
+                </td>
+                <td class="p-3 text-sm font-mono text-slate-400">${lote.fecha_vencimiento}</td>
+                <td class="p-3 text-sm">
+                    ${lote.alerta ? '<span class="text-red-400 animate-pulse">⚠️ ALERTA: RETIRAR</span>' : '<span class="text-emerald-400">✓ Óptimo</span>'}
+                </td>
+                <td class="p-3 text-sm text-center">${acciones}</td>
+            `;
+            tabla.appendChild(fila);
+            if (lote.alerta) {
+                tieneAlertas = true;
+                const item = document.createElement('li');
+                item.innerHTML = `El producto <strong>${lote.producto}</strong> con etiqueta <strong>[${lote.color}]</strong> está próximo a su vencimiento.`;
+                listaAlertas.appendChild(item);
+            }
+        });
+        contenedorAlertas.classList.toggle('hidden', !tieneAlertas);
+    } catch (_) {}
+}
+
+async function marcarVencido(id) {
+    if (!confirm('¿Marcar este producto como vencido?')) return;
+    await fetch(`${API}/api/lotes/${id}/vencer`, { method: 'POST', ...getConfig() });
+    cargarLotes();
+}
+
+async function eliminarLote(id) {
+    if (!confirm('¿Confirmar venta de este producto?')) return;
+    await fetch(`${API}/api/lotes/${id}`, { method: 'DELETE', ...getConfig() });
+    cargarLotes();
+}
+
+document.getElementById('form-lote').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const producto = document.getElementById('prod-nombre').value;
+    const color = document.getElementById('prod-color').value || 'Manual - Sin Color';
+    const horas_duracion = document.getElementById('prod-horas').value;
+    const codigo_producto = document.getElementById('prod-codigo-bar').value || null;
+    await fetch(`${API}/api/lotes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ producto, color, horas_duracion, codigo_producto })
+    });
+    document.getElementById('prod-nombre').value = '';
+    document.getElementById('prod-color').value = '';
+    document.getElementById('prod-codigo-bar').value = '';
+    document.getElementById('barcode-input').value = '';
+    cargarLotes();
+});
+
+// === PRODUCTOS (Admin) ===
+
+async function cargarProductos() {
+    try {
+        const res = await fetch(`${API}/api/productos`, getConfig());
+        if (!res.ok) return;
+        const productos = await res.json();
+        const tbody = document.getElementById('tabla-productos');
+        tbody.innerHTML = '';
+        productos.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-700/30';
+            tr.innerHTML = `
+                <td class="p-3 text-sm font-mono text-amber-400">${p.codigo}</td>
+                <td class="p-3 text-sm">${p.nombre}</td>
+                <td class="p-3 text-sm text-slate-400">${p.horas_duracion}h</td>
+                <td class="p-3 text-sm text-center">
+                    <button onclick="editarProducto(${p.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold transition-all mr-1">✏️ Editar</button>
+                    <button onclick="eliminarProducto(${p.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-bold transition-all">🗑️</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (_) {}
+}
+
+function mostrarFormProducto() {
+    document.getElementById('producto-form-container').classList.remove('hidden');
+    document.getElementById('producto-form-title').textContent = 'Nuevo Producto';
+    document.getElementById('prod-edit-id').value = '';
+    document.getElementById('prod-codigo').value = '';
+    document.getElementById('prod-nombre-p').value = '';
+    document.getElementById('prod-horas-p').value = '';
+    document.getElementById('producto-error').classList.add('hidden');
+}
+
+function cancelarFormProducto() {
+    document.getElementById('producto-form-container').classList.add('hidden');
+}
+
+async function editarProducto(id) {
+    try {
+        const res = await fetch(`${API}/api/productos`, getConfig());
+        const productos = await res.json();
+        const p = productos.find(x => x.id === id);
+        if (!p) return;
+        document.getElementById('producto-form-container').classList.remove('hidden');
+        document.getElementById('producto-form-title').textContent = 'Editar Producto';
+        document.getElementById('prod-edit-id').value = p.id;
+        document.getElementById('prod-codigo').value = p.codigo;
+        document.getElementById('prod-nombre-p').value = p.nombre;
+        document.getElementById('prod-horas-p').value = p.horas_duracion;
+        document.getElementById('producto-error').classList.add('hidden');
+    } catch (_) {}
+}
+
+async function eliminarProducto(id) {
+    if (!confirm('¿Eliminar este producto del catálogo?')) return;
+    try {
+        const res = await fetch(`${API}/api/productos/${id}`, { method: 'DELETE', ...getConfig() });
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.error);
+            return;
+        }
+        cargarProductos();
+    } catch (_) {}
+}
+
+document.getElementById('form-producto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const editId = document.getElementById('prod-edit-id').value;
+    const codigo = document.getElementById('prod-codigo').value.trim();
+    const nombre = document.getElementById('prod-nombre-p').value.trim();
+    const horas = document.getElementById('prod-horas-p').value;
+    const errSpan = document.getElementById('producto-error');
+
+    const body = JSON.stringify({ codigo, nombre, horas_duracion: horas });
+    const url = editId ? `${API}/api/productos/${editId}` : `${API}/api/productos`;
+    const method = editId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            errSpan.textContent = data.error;
+            errSpan.classList.remove('hidden');
+            return;
+        }
+        errSpan.classList.add('hidden');
+        cancelarFormProducto();
+        cargarProductos();
+    } catch (_) {
+        errSpan.textContent = 'Error de conexión';
+        errSpan.classList.remove('hidden');
+    }
+});
+
+// === EMPLEADOS (Admin) ===
+
+async function cargarEmpleados() {
+    try {
+        const res = await fetch(`${API}/api/usuarios`, getConfig());
+        if (!res.ok) return;
+        const usuarios = await res.json();
+        const tbody = document.getElementById('tabla-empleados');
+        tbody.innerHTML = '';
+
+        for (const u of usuarios) {
+            let huellasCount = 0;
+            try {
+                const hRes = await fetch(`${API}/api/usuarios/${u.id}/huellas`, getConfig());
+                const huellas = await hRes.json();
+                huellasCount = Array.isArray(huellas) ? huellas.length : 0;
+            } catch (_) {}
+
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-700/30';
+            const rolLabel = u.rol === 'admin' ? 'Admin' : 'Panadero';
+            const rolColor = u.rol === 'admin' ? 'bg-purple-600' : 'bg-emerald-700';
+            const estadoLabel = u.activo ? 'Activo' : 'Inactivo';
+            const estadoColor = u.activo ? 'text-emerald-400' : 'text-red-400';
+            const huellaBadge = huellasCount > 0
+                ? `<span class="bg-emerald-600 text-white px-2 py-0.5 rounded text-xs font-bold">${huellasCount} ✓</span>`
+                : '<span class="text-slate-500 text-xs">Sin huella</span>';
+            const huellaAcciones = huellasCount > 0
+                ? `<button onclick="verHuellas(${u.id})" class="text-slate-400 hover:text-white text-xs mr-1">👁️</button><button onclick="eliminarHuellaPorUsuario(${u.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button>`
+                : '';
+            tr.innerHTML = `
+                <td class="p-3 text-sm">${u.nombre_completo}</td>
+                <td class="p-3 text-sm text-slate-400">${u.username}</td>
+                <td class="p-3 text-sm"><span class="${rolColor} text-white px-2 py-0.5 rounded text-xs font-bold">${rolLabel}</span></td>
+                <td class="p-3 text-sm ${estadoColor} font-semibold">${estadoLabel}</td>
+                <td class="p-3 text-sm">
+                    <div class="flex items-center gap-2">${huellaBadge}${huellaAcciones}</div>
+                </td>
+                <td class="p-3 text-sm text-center">
+                    <button onclick="editarEmpleado(${u.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold transition-all mr-1">✏️ Editar</button>
+                    <button onclick="eliminarEmpleado(${u.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-bold transition-all mr-1">🗑️</button>
+                    <button onclick="registrarHuella(${u.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-xs font-bold transition-all" title="Registrar huella dactilar">🖐️ Huella</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    } catch (_) {}
+}
+
+async function eliminarHuellaPorUsuario(usuarioId) {
+    try {
+        const res = await fetch(`${API}/api/usuarios/${usuarioId}/huellas`, getConfig());
+        const huellas = await res.json();
+        if (!huellas || huellas.length === 0) {
+            alert('No hay huellas para eliminar');
+            return;
+        }
+        if (confirm(`¿Eliminar las ${huellas.length} huella(s) de este empleado?`)) {
+            for (const h of huellas) {
+                await fetch(`${API}/api/usuarios/${usuarioId}/huellas/${h.id}`, {
+                    method: 'DELETE',
+                    ...getConfig()
+                });
+            }
+            cargarEmpleados();
+        }
+    } catch (_) {
+        alert('Error al eliminar huellas');
+    }
+}
+
+function mostrarFormEmpleado() {
+    document.getElementById('empleado-form-container').classList.remove('hidden');
+    document.getElementById('empleado-form-title').textContent = 'Nuevo Empleado';
+    document.getElementById('emp-edit-id').value = '';
+    document.getElementById('emp-nombre').value = '';
+    document.getElementById('emp-username').value = '';
+    document.getElementById('emp-password').value = '';
+    document.getElementById('emp-rol').value = 'panadero';
+    document.getElementById('empleado-error').classList.add('hidden');
+    document.getElementById('emp-password').required = true;
+}
+
+function cancelarFormEmpleado() {
+    document.getElementById('empleado-form-container').classList.add('hidden');
+}
+
+async function editarEmpleado(id) {
+    try {
+        const res = await fetch(`${API}/api/usuarios`, getConfig());
+        const usuarios = await res.json();
+        const u = usuarios.find(x => x.id === id);
+        if (!u) return;
+        document.getElementById('empleado-form-container').classList.remove('hidden');
+        document.getElementById('empleado-form-title').textContent = 'Editar Empleado';
+        document.getElementById('emp-edit-id').value = u.id;
+        document.getElementById('emp-nombre').value = u.nombre_completo;
+        document.getElementById('emp-username').value = u.username;
+        document.getElementById('emp-password').value = '';
+        document.getElementById('emp-password').required = false;
+        document.getElementById('emp-rol').value = u.rol;
+        document.getElementById('empleado-error').classList.add('hidden');
+    } catch (_) {}
+}
+
+async function eliminarEmpleado(id) {
+    if (!confirm('¿Eliminar este empleado permanentemente?')) return;
+    try {
+        const res = await fetch(`${API}/api/usuarios/${id}`, { method: 'DELETE', ...getConfig() });
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.error);
+            return;
+        }
+        cargarEmpleados();
+    } catch (_) {}
+}
+
+document.getElementById('form-empleado').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const editId = document.getElementById('emp-edit-id').value;
+    const nombre = document.getElementById('emp-nombre').value.trim();
+    const username = document.getElementById('emp-username').value.trim();
+    const password = document.getElementById('emp-password').value;
+    const rol = document.getElementById('emp-rol').value;
+    const errSpan = document.getElementById('empleado-error');
+
+    const body = { nombre_completo: nombre, username, rol };
+    if (password) body.password = password;
+
+    const url = editId ? `${API}/api/usuarios/${editId}` : `${API}/api/usuarios`;
+    const method = editId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            errSpan.textContent = data.error;
+            errSpan.classList.remove('hidden');
+            return;
+        }
+        errSpan.classList.add('hidden');
+        cancelarFormEmpleado();
+        cargarEmpleados();
+    } catch (_) {
+        errSpan.textContent = 'Error de conexión';
+        errSpan.classList.remove('hidden');
+    }
+});
+
+// === REPORTES (Admin) ===
+
+function toggleFechasReporte() {
+    const periodo = document.getElementById('reporte-periodo').value;
+    document.getElementById('fecha-desde-container').classList.toggle('hidden', periodo !== 'personalizado');
+    document.getElementById('fecha-hasta-container').classList.toggle('hidden', periodo !== 'personalizado');
+}
+
+async function cargarReportes() {
+    const periodo = document.getElementById('reporte-periodo').value;
+    const desde = document.getElementById('reporte-desde').value;
+    const hasta = document.getElementById('reporte-hasta').value;
+    let params = `?periodo=${periodo}`;
+    if (periodo === 'personalizado' && desde && hasta) {
+        params += `&desde=${desde}&hasta=${hasta}`;
+    }
+    try {
+        const res = await fetch(`${API}/api/reportes${params}`, getConfig());
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('reporte-recibidos').textContent = data.recibidos;
+        document.getElementById('reporte-vendidos').textContent = data.vendidos;
+        document.getElementById('reporte-vencidos').textContent = data.vencidos;
+        document.getElementById('reporte-stock').textContent = data.en_stock;
+
+        const topR = document.getElementById('top-recibidos');
+        topR.innerHTML = data.top_recibidos.length
+            ? data.top_recibidos.map((p, i) =>
+                `<div class="flex justify-between text-sm py-1 border-b border-slate-700/50">
+                    <span>${i + 1}. ${p.producto}</span>
+                    <span class="text-emerald-400 font-bold">${p.total}</span>
+                </div>`
+              ).join('')
+            : '<p class="text-slate-500 text-sm">Sin datos</p>';
+
+        const topV = document.getElementById('top-vendidos');
+        topV.innerHTML = data.top_vendidos.length
+            ? data.top_vendidos.map((p, i) =>
+                `<div class="flex justify-between text-sm py-1 border-b border-slate-700/50">
+                    <span>${i + 1}. ${p.producto}</span>
+                    <span class="text-blue-400 font-bold">${p.total}</span>
+                </div>`
+              ).join('')
+            : '<p class="text-slate-500 text-sm">Sin datos</p>';
+    } catch (_) {}
+}
+
+verificarSesion();
+</script>
+</body>
+</html>
